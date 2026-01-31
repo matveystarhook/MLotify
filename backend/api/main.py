@@ -1,5 +1,3 @@
-# backend/api/main.py
-
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -35,8 +33,9 @@ app.add_middleware(
         "https://web.telegram.org",
         "https://*.telegram.org",
         settings.WEBAPP_URL,
-        "http://localhost:5173",  # Vite dev server
+        "http://localhost:5173",
         "http://localhost:3000",
+        "*"  # Временно для теста
     ],
     allow_credentials=True,
     allow_methods=["*"],
