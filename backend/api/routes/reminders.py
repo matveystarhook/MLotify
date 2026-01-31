@@ -1,9 +1,8 @@
-# backend/api/routes/reminders.py
-
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from datetime import datetime
+import pytz
 
 from database.database import get_session
 from database.repositories.user_repo import UserRepository
@@ -53,7 +52,7 @@ async def get_reminders(
         category_id=category_id,
         from_date=from_date,
         to_date=to_date,
-        limit=limit + 1,  # +1 чтобы проверить has_more
+        limit=limit + 1,
         offset=offset
     )
     
@@ -61,7 +60,6 @@ async def get_reminders(
     if has_more:
         reminders = reminders[:limit]
     
-    # Получаем общее количество
     stats = await repo.get_stats(user.id)
     total = stats["total"]
     
@@ -107,16 +105,35 @@ async def create_reminder(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
+    # Конвертируем время в UTC
+    remind_at_utc = data.remind_at
+    if remind_at_utc.tzinfo is None:
+        remind_at_utc = remind_at_utc.replace(tzinfo=pytz.UTC)
+    
     repo = ReminderRepository(session)
-    reminder = await repo.create(
-        user_id=user.id,
-        **data.model_dump()
-    )
     
-    # Обновляем статистику
-    await user_repo.increment_stats(user.id, created=1)
-    
-    return reminder
+    try:
+        reminder = await repo.create(
+            user_id=user.id,
+            title=data.title,
+            description=data.description,
+            remind_at=remind_at_utc,
+            category_id=data.category_id,
+            priority=data.priority,
+            repeat_type=data.repeat_type,
+            repeat_days=data.repeat_days,
+            repeat_end_date=data.repeat_end_date,
+            notify_before=data.notify_before
+        )
+        
+        # Обновляем статистику
+        await user_repo.increment_stats(user.id, created=1)
+        
+        return reminder
+        
+    except Exception as e:
+        print(f"❌ Error creating reminder: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/{reminder_id}", response_model=ReminderResponse)
 async def get_reminder(
