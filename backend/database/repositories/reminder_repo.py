@@ -1,6 +1,4 @@
-# backend/database/repositories/reminder_repo.py
-
-from sqlalchemy import select, update, delete, and_, or_
+from sqlalchemy import select, update, delete, and_, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from typing import Optional, List
@@ -8,43 +6,44 @@ from datetime import datetime, timedelta
 
 from database.models import Reminder, ReminderStatus, RepeatType, Priority
 
+
 class ReminderRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
     
     async def create(
-    self,
-    user_id: int,
-    title: str,
-    remind_at: datetime,
-    description: Optional[str] = None,
-    category_id: Optional[int] = None,
-    priority: Priority = Priority.MEDIUM,
-    repeat_type: RepeatType = RepeatType.NONE,
-    repeat_days: Optional[str] = None,
-    repeat_end_date: Optional[datetime] = None,  # ← ДОБАВЬ ЭТУ СТРОКУ
-    notify_before: int = 0
-) -> Reminder:
-    """Создать напоминание"""
-    
-    reminder = Reminder(
-        user_id=user_id,
-        title=title,
-        description=description,
-        remind_at=remind_at,
-        category_id=category_id,
-        priority=priority,
-        repeat_type=repeat_type,
-        repeat_days=repeat_days,
-        repeat_end_date=repeat_end_date,  # ← И ЭТУ
-        notify_before=notify_before
-    )
-    
-    self.session.add(reminder)
-    await self.session.commit()
-    await self.session.refresh(reminder)
-    
-    return reminder
+        self,
+        user_id: int,
+        title: str,
+        remind_at: datetime,
+        description: Optional[str] = None,
+        category_id: Optional[int] = None,
+        priority: Priority = Priority.MEDIUM,
+        repeat_type: RepeatType = RepeatType.NONE,
+        repeat_days: Optional[str] = None,
+        repeat_end_date: Optional[datetime] = None,
+        notify_before: int = 0
+    ) -> Reminder:
+        """Создать напоминание"""
+        
+        reminder = Reminder(
+            user_id=user_id,
+            title=title,
+            description=description,
+            remind_at=remind_at,
+            category_id=category_id,
+            priority=priority,
+            repeat_type=repeat_type,
+            repeat_days=repeat_days,
+            repeat_end_date=repeat_end_date,
+            notify_before=notify_before
+        )
+        
+        self.session.add(reminder)
+        await self.session.commit()
+        await self.session.refresh(reminder)
+        
+        return reminder
     
     async def get_by_id(
         self, 
@@ -211,8 +210,6 @@ class ReminderRepository:
     
     async def get_stats(self, user_id: int) -> dict:
         """Статистика напоминаний пользователя"""
-        
-        from sqlalchemy import func
         
         # Общее количество по статусам
         status_query = (
