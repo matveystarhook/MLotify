@@ -13,36 +13,38 @@ class ReminderRepository:
         self.session = session
     
     async def create(
-        self,
-        user_id: int,
-        title: str,
-        remind_at: datetime,
-        description: Optional[str] = None,
-        category_id: Optional[int] = None,
-        priority: Priority = Priority.MEDIUM,
-        repeat_type: RepeatType = RepeatType.NONE,
-        repeat_days: Optional[str] = None,
-        notify_before: int = 0
-    ) -> Reminder:
-        """Создать напоминание"""
-        
-        reminder = Reminder(
-            user_id=user_id,
-            title=title,
-            description=description,
-            remind_at=remind_at,
-            category_id=category_id,
-            priority=priority,
-            repeat_type=repeat_type,
-            repeat_days=repeat_days,
-            notify_before=notify_before
-        )
-        
-        self.session.add(reminder)
-        await self.session.commit()
-        await self.session.refresh(reminder)
-        
-        return reminder
+    self,
+    user_id: int,
+    title: str,
+    remind_at: datetime,
+    description: Optional[str] = None,
+    category_id: Optional[int] = None,
+    priority: Priority = Priority.MEDIUM,
+    repeat_type: RepeatType = RepeatType.NONE,
+    repeat_days: Optional[str] = None,
+    repeat_end_date: Optional[datetime] = None,  # ← ДОБАВЬ ЭТУ СТРОКУ
+    notify_before: int = 0
+) -> Reminder:
+    """Создать напоминание"""
+    
+    reminder = Reminder(
+        user_id=user_id,
+        title=title,
+        description=description,
+        remind_at=remind_at,
+        category_id=category_id,
+        priority=priority,
+        repeat_type=repeat_type,
+        repeat_days=repeat_days,
+        repeat_end_date=repeat_end_date,  # ← И ЭТУ
+        notify_before=notify_before
+    )
+    
+    self.session.add(reminder)
+    await self.session.commit()
+    await self.session.refresh(reminder)
+    
+    return reminder
     
     async def get_by_id(
         self, 
